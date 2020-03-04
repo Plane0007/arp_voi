@@ -1,4 +1,4 @@
 Simpelt voi skript. Drag & Drop.
-Finns 3 platser. Torget,Flygplatsen samt motellet.
+Finns flertal platser. Torget,Flygplatsen med mera.
 
 Tack till Zeaqy för hjälpen!
