@@ -28,25 +28,32 @@ Citizen.CreateThread(function()
 
 				sleepThread = 5
 
-				if dstCheck < 3.0 then
+				if dstCheck < 5.0 then
 
 					if IsControlJustReleased(0, 38) then
-
-						if cachedData["rentedVoi"] then
-							TriggerEvent('esx:deleteVehicle')
-							cachedData["rentedVoi"] = false
-							TriggerServerEvent("arp_voi:pengar", Config.PPM * cachedData["timeRented"])
+							if cachedData["rentedVoi"] then
 						else
 							VoiMeny()
-						end
-						
 					end
-					ESX.ShowHelpNotification(cachedData["rentedVoi"] and "~INPUT_CONTEXT~ Ställ tillbaka din voi" or "~INPUT_CONTEXT~ Hyr en Voi")
+				end
+					ESX.ShowHelpNotification("~INPUT_CONTEXT~ Hyr en Voi")
 				end
 				DrawMarker(6, coords - vector3(0.0, 0.0, 0.98), 0, 0, 0.1, 0, 0, 0, 1.0, 1.0, 1.0, 0, 205, 150, 200, 0, 0, 0, 0)
 			end
 		end
 		Citizen.Wait(sleepThread)
+	end
+end)
+
+Citizen.CreateThread(function()
+		while true do
+		Citizen.Wait(10)
+	
+		if IsControlJustPressed(0, 311) then
+			cachedData["rentedVoi"] = nil
+			ESX.Game.DeleteVehicle(cachedData["voiModel"])
+			TriggerServerEvent("arp_voi:pengar", Config.PPM * cachedData["cost"])
+		end
 	end
 end)
 
@@ -65,19 +72,14 @@ function VoiMeny()
 	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'client',
 		{
 			title    = ('Hyrning av Voi'),
-			align    = 'top-right',
+			align    = 'center',
 			elements = elements,
 		},
 	function(data, menu)
 		if data.current.value == 'voi' then
-			if Config.EnablePrice then
-				TriggerServerEvent("arp_voi:pengar", Config.Price) 
-				TriggerEvent('notification', 'Du hyrde en Voi för ' .. Config.Price .. 'kr', 3)
-				rentVoi()
-			else TriggerEvent('notification', 'Du hyrde en Voi', 3)
-				rentVoi()
+			sendNotification('Du hyrde en Voi', 'error', 4000)
+			rentVoi()
 			end
-		end
 		ESX.UI.Menu.CloseAll()
 	end,
 	function(data, menu)
@@ -94,6 +96,7 @@ rentVoi = function()
 	TaskWarpPedIntoVehicle(PlayerPedId(), cachedData["voiModel"], -1)
 	cachedData["rentedVoi"] = true
 	cachedData["timeRented"] = 0
+	cachedData["cost"] = 0
 	Citizen.CreateThread(function()
 		
 		local lastAdded = GetGameTimer()
@@ -104,21 +107,24 @@ rentVoi = function()
 			local ped = PlayerPedId()
 			local pedCoords = GetEntityCoords(ped)
 			
-			if IsPedInVehicle(ped, cachedData["voiModel"]) then
+			if IsPedInVehicle or IsPedOnFoot(ped, cachedData["voiModel"]) then
 				
 				sleepThread = 5
 				
-				if GetEntitySpeed(cachedData["voiModel"]) > 0.0 then
+				if (cachedData["voiModel"]) > 0.0 then
 
 
-					if GetGameTimer() - lastAdded > 60000 then
+					if GetGameTimer() - lastAdded > 30000 then
 
-						cachedData["timeRented"] = cachedData["timeRented"] + 1
+						cachedData["timeRented"] = cachedData["timeRented"] + 0.5
+						cachedData["cost"] = cachedData["cost"] + 1.0
 						lastAdded = GetGameTimer()
 
 					end
 				end
-				drawTxt(0.88, 0.6, 1.0, 1.0, 0.5, "Tid:~r~ " ..cachedData["timeRented"].."~s~ minuter | " .."Kostnad: ~g~" ..cachedData["timeRented"]*Config.PPM.. "~s~ SEK", 255, 255, 255, 255)
+				drawTxt(1.37, 0.73, 1.0, 1.0, 0.5, "Tid:~r~ " ..cachedData["timeRented"].."~s~ minuter", 255, 255, 255, 255)
+				drawTxt(1.37, 0.78, 1.0, 1.0, 0.5, "Kostnad: ~g~" ..cachedData["cost"]*Config.PPM.. "~s~ SEK", 255, 255, 255, 255) 
+				drawTxt(1.37, 0.83, 1.0, 1.0, 0.5, "[~g~K~s~] Avsluta körning", 255, 255, 255, 255)
 			end
 			Citizen.Wait(sleepThread)
 		end
@@ -127,7 +133,7 @@ end
 
 
 drawTxt = function(x,y ,width,height,scale, text, r,g,b,a, outline)
-    SetTextFont(0)
+    SetTextFont(4)
     SetTextProportional(0)
     SetTextScale(scale, scale)
     SetTextColour(r, g, b, a)
@@ -139,5 +145,34 @@ drawTxt = function(x,y ,width,height,scale, text, r,g,b,a, outline)
 	end
     SetTextEntry("STRING")
     AddTextComponentString(text)
-    DrawText(x - width/2, y - height/2 + 0.005)
+	DrawText(x - width/2, y - height/2 + 0.005)
+	DrawRect(0.920, 0.300, 0.13, 0.15, 41, 41, 41, 250)
 end
+
+function sendNotification(message, messageType, messageTimeout)
+	TriggerEvent("pNotify:SendNotification", {
+		text = message,
+		type = messageType,
+		queue = "kok",
+		timeout = messageTimeout,
+		layout = "centerRight"
+	})
+end
+
+Citizen.CreateThread(function()
+	if Config.EnableBlips then
+		for k, v in ipairs(Config.Locations) do
+			local blip = AddBlipForCoord(v.x, v.y, v.z)
+
+			SetBlipSprite(blip, 494)
+			SetBlipScale(blip, 0.8)
+			SetBlipColour(blip, 4)
+			SetBlipDisplay(blip, 4)
+			SetBlipAsShortRange(blip, true)
+
+			BeginTextCommandSetBlipName("STRING")
+			AddTextComponentString("Hyr Voi")
+			EndTextCommandSetBlipName(blip)
+		end
+	end
+end)
