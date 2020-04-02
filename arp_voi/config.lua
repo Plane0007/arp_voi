@@ -1,13 +1,7 @@
 Config = {}
 
---- #### BASICS
-Config.EnablePrice = false -- false = bikes for free
-Config.EnableBlips = true
-
-
---- #### PRICES	
-Config.Price = 60
-Config.PPM = 30 -- Price Per Minute
+Config.EnableBlips = true -- Blips AV/PÅ
+Config.PPM = 30 -- Pris per minut
 Config.VoiModel = 'serv_electricscooter'
 
 Config.Locations = {
