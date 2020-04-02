@@ -64,11 +64,8 @@ function VoiMeny()
 	
 	local elements = {}
 	
-	if not Config.EnablePrice then
-		table.insert(elements, {label = ('Voi'), value = 'voi'}) 
-	else
-		table.insert(elements, {label = ('Voi - 50kr'), value = 'voi'})
-	end
+	if table.insert(elements, {label = ('Voi'), value = 'voi'}) then
+end
 	ESX.UI.Menu.CloseAll()
 
 	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'client',
