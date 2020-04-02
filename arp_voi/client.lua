@@ -46,13 +46,15 @@ Citizen.CreateThread(function()
 end)
 
 Citizen.CreateThread(function()
-		while true do
-		Citizen.Wait(10)
+	while true do
+	Citizen.Wait(10)
 	
 		if IsControlJustPressed(0, 311) then
-			cachedData["rentedVoi"] = nil
-			ESX.Game.DeleteVehicle(cachedData["voiModel"])
-			TriggerServerEvent("arp_voi:pengar", Config.PPM * cachedData["cost"])
+			if cachedData["rentedVoi"] then
+				ESX.Game.DeleteVehicle(cachedData["voiModel"])
+				cachedData["rentedVoi"] = false
+				TriggerServerEvent("arp_voi:pengar", Config.PPM * cachedData["cost"])
+			end
 		end
 	end
 end)
